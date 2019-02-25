@@ -30,24 +30,27 @@ class V (s :: Setting) where
   zeroS :: Setting' s
   timesS :: Setting' s -> Setting' s -> Setting' s
   negateS :: Setting' s -> Setting' s
+  nearZeroS :: Setting' s -> Bool
 
 instance V 'Classical where
   type Setting' 'Classical = Double
-  oneS = one; plusS = plus; zeroS = zero; timesS = times; negateS = negate;
+  oneS = one; plusS = plus; zeroS = zero; timesS = times; negateS = negate; nearZeroS = nearZero;
   {-# inline oneS #-}
   {-# inline plusS #-}
   {-# inline zeroS #-}
   {-# inline timesS #-}
   {-# inline negateS #-}
+  {-# inline nearZeroS #-}
 
 instance V 'Quantum where
   type Setting' 'Quantum = Complex Double
-  oneS = one; plusS = plus; zeroS = zero; timesS = times; negateS = negate;
+  oneS = one; plusS = plus; zeroS = zero; timesS = times; negateS = negate; nearZeroS = nearZero;
   {-# inline oneS #-}
   {-# inline plusS #-}
   {-# inline zeroS #-}
   {-# inline timesS #-}
   {-# inline negateS #-}
+  {-# inline nearZeroS #-}
 
 data Space (s :: Setting) a = Space !a !(Setting' s)
 
@@ -187,4 +190,10 @@ zeno3 n = pure (Experimenter [] True) & repeatM n
     s' <- rotate (pi / fromIntegral n) s
     pure $ Experimenter (s:m) s' 
   ) & observe & fmap experimenterState & collect
+
+trimZero :: V s => W s a -> W s a
+trimZero = W . List.filter (\(Space _ v) -> not $ nearZeroS v) . runW
+
+simplify :: Ord a => Q a -> Q a
+simplify = trimZero . collect
 
